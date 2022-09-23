@@ -1,8 +1,11 @@
 import "./counter.css";
 
+import Image from "./components/Image/Image";
+
 import { useState } from "react";
 
-export default function Counter({ id, name, value, count, update_name }) {
+export default function Counter({ update_name, remove, counter, count, replace }) {
+    const { id, name, value, imageURL } = counter;
     const [editingName, setEditingName] = useState(false);
     const [newName, setNewName] = useState(name);
     const [prevName, setPrevName] = useState(name);
@@ -23,8 +26,24 @@ export default function Counter({ id, name, value, count, update_name }) {
         setNewName(event.target.value);
     }
 
+    function change_image(event) {
+        const file = event.target.files[0];
+
+        replace(counter, file);
+    }
+
     return (
         <div className="counter">
+            <div className="controls">
+                <Image src={imageURL} alt="image" />
+                <button
+                    className="remove"
+                    onClick={() => remove(counter)}
+                ></button>
+                <label htmlFor={`change-image-${id}`} className="change-image">
+                    <input type="file" id={`change-image-${id}`} onChange={change_image} />
+                </label>
+            </div>
             <div className="container">
                 {editingName ? (
                     <form onSubmit={handle_change}>

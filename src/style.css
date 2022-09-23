@@ -59,7 +59,7 @@
 .App .creation-form input[type="text"] {
     background: rgb(247, 245, 244);
     padding: 0.1rem;
-    padding: .25rem;
+    padding: 0.25rem;
     font-family: monospace;
     border-radius: 0.2rem;
     border: none;
@@ -77,11 +77,11 @@
     border-radius: 0.25rem;
     font-family: monospace;
     font-size: 0.95rem;
-    transition: background-color .33s, scale .33s;
+    transition: background-color 0.33s, scale 0.33s;
 }
 
 .App .creation-form button:active {
-    transform: scale(.985);
+    transform: scale(0.985);
 }
 
 .App .counters {
@@ -94,5 +94,11 @@
 @media (hover: hover) {
     .App .creation-form button:hover {
         background: rgb(204, 85, 103);
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .App .counters {
+        flex-direction: column;
     }
 }
