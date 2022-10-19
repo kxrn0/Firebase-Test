@@ -6,6 +6,19 @@
     box-sizing: border-box;
 }
 
+body {
+    background: rgb(171, 237, 159);
+}
+
+.log-in {
+    display: block;
+    background: rgb(247, 194, 194);
+    margin: 100px auto;
+    padding: .5rem 1rem;
+    font-family: monospace;
+    border: none;
+}
+
 .App {
     background: rgb(213, 239, 215);
     display: flex;
@@ -46,44 +59,6 @@
     background: rgb(255, 235, 104);
 }
 
-.App .creation-form {
-    background: rgb(123, 165, 255);
-    margin: 2rem;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-}
-
-.App .creation-form input[type="text"] {
-    background: rgb(247, 245, 244);
-    padding: 0.1rem;
-    padding: 0.25rem;
-    font-family: monospace;
-    border-radius: 0.2rem;
-    border: none;
-}
-
-.App .creation-form input[type="text"]:focus {
-    outline: 2px solid rgb(251, 50, 50);
-}
-
-.App .creation-form button {
-    background: rgb(221, 100, 119);
-    color: azure;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 0.25rem;
-    font-family: monospace;
-    font-size: 0.95rem;
-    transition: background-color 0.33s, scale 0.33s;
-}
-
-.App .creation-form button:active {
-    transform: scale(0.985);
-}
-
 .App .counters {
     display: flex;
     flex-wrap: wrap;
@@ -91,14 +66,15 @@
     align-items: center;
 }
 
-@media (hover: hover) {
-    .App .creation-form button:hover {
-        background: rgb(204, 85, 103);
-    }
-}
-
 @media screen and (max-width: 600px) {
+    .App .navbar p {
+        font-size: 1rem;
+        line-height: 1.5rem;
+        width: min-content;
+    }
+
     .App .counters {
         flex-direction: column;
+        margin-bottom: 3rem;
     }
 }

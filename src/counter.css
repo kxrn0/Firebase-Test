@@ -65,6 +65,8 @@
 }
 
 .counter .controls {
+    display: grid;
+    place-items: center;
     position: relative;
     padding-bottom: 1.5rem;
 }
@@ -90,7 +92,7 @@
 .counter .controls .change-image {
     background-color: rgb(196, 227, 255, 0.9);
     background-image: url("./assets/image-edit-outline.svg");
-    border-radius: .25rem;
+    border-radius: 0.25rem;
     position: absolute;
     top: 1rem;
     left: 1rem;
@@ -106,5 +108,12 @@
     .counter .count-section button:hover {
         background: white;
         color: black;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .counter .image {
+        --width: 200px;
+        --height: 200px;
     }
 }

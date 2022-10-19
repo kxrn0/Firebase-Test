@@ -4,7 +4,13 @@ import Image from "./components/Image/Image";
 
 import { useState } from "react";
 
-export default function Counter({ update_name, remove, counter, count, replace }) {
+export default function Counter({
+    update_name,
+    remove,
+    counter,
+    count,
+    replace,
+}) {
     const { id, name, value, imageURL } = counter;
     const [editingName, setEditingName] = useState(false);
     const [newName, setNewName] = useState(name);
@@ -41,7 +47,11 @@ export default function Counter({ update_name, remove, counter, count, replace }
                     onClick={() => remove(counter)}
                 ></button>
                 <label htmlFor={`change-image-${id}`} className="change-image">
-                    <input type="file" id={`change-image-${id}`} onChange={change_image} />
+                    <input
+                        type="file"
+                        id={`change-image-${id}`}
+                        onChange={change_image}
+                    />
                 </label>
             </div>
             <div className="container">

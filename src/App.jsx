@@ -1,5 +1,4 @@
 import { config } from "./config";
-
 import { initializeApp } from "firebase/app";
 import {
     getAuth,
@@ -15,7 +14,6 @@ import {
     query,
     orderBy,
     onSnapshot,
-    setDoc,
     updateDoc,
     doc,
     serverTimestamp,
@@ -31,7 +29,7 @@ import {
 } from "firebase/storage";
 import { useEffect, useState } from "react";
 import Counter from "./Counter";
-
+import Form from "./components/Form/Form";
 import "./style.css";
 
 function App() {
@@ -48,29 +46,21 @@ function App() {
         signOut(getAuth());
     }
 
-    async function create_counter(event) {
-        event.preventDefault();
-
-        const input = event.target["counter-name"];
-        const fileInput = event.target["image-file"];
-
-        if (!input.value.trim()) return;
-
+    async function create_counter(file, name) {
         try {
+            const documentCounter = {
+                name: name,
+                timestamp: serverTimestamp(),
+                value: 0,
+                imageURL: "https://www.google.com/images/spin-32.gif",
+            };
             const counterRef = await addDoc(
                 collection(
                     getFirestore(),
                     `users/${getAuth().currentUser.uid}/counters`
                 ),
-                {
-                    name: input.value,
-                    timestamp: serverTimestamp(),
-                    value: 0,
-                    imageURL: "https://www.google.com/images/spin-32.gif",
-                }
+                documentCounter
             );
-
-            const file = fileInput.files[0];
             const filePath = `users/${getAuth().currentUser.uid}/${
                 counterRef.id
             }/${file.name}`;
@@ -79,24 +69,27 @@ function App() {
                 counterImageRef,
                 file
             );
-            const publicImageURL = await getDownloadURL(counterImageRef);
-            event.target.reset();
+            const imageURL = await getDownloadURL(counterImageRef);
+            const storageUri = fileSnapshot.metadata.fullPath;
 
             await updateDoc(counterRef, {
-                imageURL: publicImageURL,
-                storageUri: fileSnapshot.metadata.fullPath,
+                imageURL,
+                storageUri,
             });
+            documentCounter.imageURL = imageURL;
+            documentCounter.storageUri = storageUri;
+            documentCounter.id = counterRef.id;
 
-            //...
+            setCounters((prevCounters) => [
+                ...prevCounters.slice(0, prevCounters.length - 1),
+                documentCounter,
+            ]);
         } catch (error) {
             console.log(`Error: ${error}`);
         }
     }
 
     async function remove_counter({ id, storageUri }) {
-        setCounters((prevCounters) =>
-            prevCounters.filter((counter) => counter.id !== id)
-        );
         try {
             const docRef = doc(
                 getFirestore(),
@@ -105,13 +98,12 @@ function App() {
             );
             const imageRef = ref(getStorage(), storageUri);
 
-            // await deleteObject(imageRef);
-            // await deleteDoc(docRef);
+            await deleteDoc(docRef);
+            await deleteObject(imageRef);
 
-            console.log(`~~storage URI~~ : ${storageUri}`);
-            console.log(imageRef);
-            deleteObject(imageRef);
-            deleteDoc(docRef);
+            setCounters((prevCounters) =>
+                prevCounters.filter((counter) => counter.id !== id)
+            );
         } catch (wrror) {
             console.log(`Error deleting document: ${wrror}`);
         }
@@ -189,49 +181,40 @@ function App() {
     }
 
     async function replace_image(counter, file) {
-        /**
-         * I want to replace the image of the counter, I guess what I sneed to do is
-         * first delete the image, then replace it with the new one. I think it would be useful
-         * if the image were temporaly replaced by a loading spinner to indicate that the image
-         * is being replaced.
-         *
-         * What I need to delete the image is the id of the counter, and the storageUri, I will also need
-         * a reference to the counter that will be associated with the image.
-         *
-         * Let's delete the image first.
-         */
+        try {
+            const imageRef = ref(getStorage(), counter.storageUri);
+            const docRef = doc(
+                getFirestore(),
+                `users/${getAuth().currentUser.uid}/counters`,
+                counter.id
+            );
+            const filePath = `users/${getAuth().currentUser.uid}/${
+                counter.id
+            }/${file.name}`;
+            const counterImageRef = ref(getStorage(), filePath);
+            let fileSnapshot, imageURL, storageUri;
 
-        const imageRef = ref(getStorage(), counter.storageUri);
-        const docRef = doc(
-            getFirestore(),
-            `users/${getAuth().currentUser.uid}/counters`,
-            counter.id
-        );
-        const filePath = `users/${getAuth().currentUser.uid}/${counter.id}/${
-            file.name
-        }`;
-        const counterImageRef = ref(getStorage(), filePath);
-        let fileSnapshot, publicImageURL;
+            updateDoc(docRef, {
+                imageURL: "https://www.google.com/images/spin-32.gif",
+            });
+            fileSnapshot = await uploadBytesResumable(counterImageRef, file);
+            imageURL = await getDownloadURL(counterImageRef);
+            storageUri = fileSnapshot.metadata.fullPath;
 
-        fileSnapshot = uploadBytesResumable(counterImageRef, file).then(result =>
-            getDownloadURL(counterImageRef).then((res) =>
-                updateDoc(docRef, {
-                    imageURL: res,
-                    storageUri: result.metadata.fullPath,
-                })
-            )
-        );
-        // const fileSnapshot = await uploadBytesResumable(counterImageRef, file);
-        // const publicImageURL = await getDownloadURL(counterImageRef);
-
-        updateDoc(docRef, {
-            imageURL: "https://www.google.com/images/spin-32.gif",
-        });
-        deleteObject(imageRef);
-        await updateDoc(docRef, {
-            imageURL: publicImageURL,
-            storageUri: fileSnapshot.metadata.fullPath,
-        });
+            await updateDoc(docRef, { imageURL, storageUri });
+            setCounters((prevCounters) => {
+                const index = prevCounters.findIndex(
+                    (other) => other.id === counter.id
+                );
+                return prevCounters
+                    .slice(0, index)
+                    .concat({ ...counter, imageURL, storageUri })
+                    .concat(prevCounters.slice(index + 1));
+            });
+            await deleteObject(imageRef);
+        } catch (wee) {
+            console.log(wee);
+        }
     }
 
     useEffect(() => {
@@ -246,39 +229,37 @@ function App() {
     }, []);
 
     return (
-        <div className="App">
-            <nav className="navbar">
-                <p>Thing Counter</p>
-                {isLoggedIn ? (
-                    <button className="log-out" onClick={sign_out}>
-                        Log Out
-                    </button>
-                ) : (
-                    <button className="log-in" onClick={sign_in}>
-                        Log In
-                    </button>
-                )}
-            </nav>
+        <>
+            {!isLoggedIn ? (
+                <button className="log-in" onClick={sign_in}>
+                    Log In
+                </button>
+            ) : (
+                <div className="App">
+                    <nav className="navbar">
+                        <p>Thing Counter</p>
+                        <button className="log-out" onClick={sign_out}>
+                            Log Out
+                        </button>
+                    </nav>
 
-            <form className="creation-form" onSubmit={create_counter}>
-                <input type="file" name="image-file" />
-                <input type="text" name="counter-name" />
-                <button type="submit">Create Counter</button>
-            </form>
+                    <Form create_counter={create_counter} />
 
-            <div className="counters">
-                {counters.map((counter) => (
-                    <Counter
-                        key={counter.id}
-                        update_name={update_name}
-                        remove={remove_counter}
-                        counter={counter}
-                        count={handle_input}
-                        replace={replace_image}
-                    />
-                ))}
-            </div>
-        </div>
+                    <div className="counters">
+                        {counters.map((counter) => (
+                            <Counter
+                                key={counter.id}
+                                update_name={update_name}
+                                remove={remove_counter}
+                                counter={counter}
+                                count={handle_input}
+                                replace={replace_image}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+        </>
     );
 }
 
